@@ -1,0 +1,102 @@
+[
+  {
+    "name": "Abertura de Portas",
+    "description": "Abertura de Portas",
+    "sql": "select DevicesHistories.createdAt as DataHora, c2.document as Documento, c2.name as Nome, c2.phone as Telefone, c2.email as Email, Devices.description as Dispositivo, DevicesHistories.status as Status\nfrom DevicesHistories\ninner join Customers c2 on DevicesHistories.customerId = c2.id\ninner join Devices on Devices.id = DevicesHistories.deviceId\ninner join :table on :table.Id = DevicesHistories.siteId\nwhere (1=1) [[and {{data}}]] [[and {{filterSite}}]] [[and {{filterDevice}}]]\norder by DataHora DESC"
+  },
+  {
+    "name": "Clientes Atendidos",
+    "description": "Clientes Atendidos",
+    "sql": "select count(distinct op.paymentCardNumber)\nfrom Orders\ninner join Sites on Sites.id = Orders.siteId\ninner join :table on :table.id = Orders.siteId\ninner join OrderPayments op on op.orderId = Orders.id\nwhere (1=1) [[and {{filtersite}}]] [[and {{data}}]]"
+  },
+  {
+    "name": "Custo Total",
+    "description": "Custo Total",
+    "sql": "select sum(OrderItems.totalcost) as TotalCusto\nfrom Orders\ninner join :table on :table.id = Orders.siteId\ninner join OrderItems on OrderItems.orderid = Orders.id\nwhere (1=1) [[and {{data}}]] [[and {{filterSite}}]]"
+  },
+  {
+    "name": "Estoque Ideal",
+    "description": "Estoque Ideal",
+    "sql": "select round((SUM(ps.availableQuantity) / sum(ps.idealQuantity))*100,1) as PercentualIdeal\nfrom Products p\ninner join ProductsSites ps on p.id = ps.productId\ninner join :table on :table.id = ps.siteId\nwhere p.isInactive = 0 and ps.isInactive = 0 [[and {{filtersite}}]]"
+  },
+  {
+    "name": "Itens Ativos",
+    "description": "Itens Ativos",
+    "sql": "select count(*)\nfrom Products p\ninner join ProductsSites ps on p.id = ps.productId\ninner join :table on :table.id = ps.siteId\nwhere p.isInactive = 0 and ps.isInactive = 0 [[and {{filtersite}}]]"
+  },
+  {
+    "name": "Lista Sites",
+    "description": "Lista Sites",
+    "sql": "select * from :table"
+  },
+  {
+    "name": "Lucro Bruto",
+    "description": "Lucro Bruto",
+    "sql": "select sum(OrderItems.totalvalue) - sum(OrderItems.totalcost) as TotalLucro\nfrom Orders\ninner join :table on :table.id = Orders.siteId\ninner join OrderItems on OrderItems.orderid = Orders.id\nwhere (1=1)\n[[and {{data}}]]\n[[and {{filterSite}}]]"
+  },
+  {
+    "name": "MarkDown",
+    "description": "MarkDown",
+    "sql": "select round((sum(OrderItems.totalvalue) - sum(OrderItems.totalcost)) / sum(OrderItems.totalvalue)*100,3) as Markdown\nfrom Orders\ninner join :table on :table.id = Orders.siteId\ninner join OrderItems on OrderItems.orderid = Orders.id\nwhere (0=0)\n[[and {{data}}]]\n[[and {{filterSite}}]]"
+  },
+  {
+    "name": "MarkUp",
+    "description": "MarkUp",
+    "sql": "select round((sum(OrderItems.totalvalue) - sum(OrderItems.totalcost)) / sum(OrderItems.totalcost)*100,3) as Markup\nfrom Orders\ninner join :table on :table.id = Orders.siteId\ninner join OrderItems on OrderItems.orderid = Orders.id\nwhere (1=1)\n[[and {{data}}]]\n[[and {{filterSite}}]]"
+  },
+  {
+    "name": "Produtos Abaixo do Ideal",
+    "description": "Produtos Abaixo do Ideal",
+    "sql": "select * from (\nselect ps.siteId, s2.name, p.sku, p.description,ps.costPrice, ps.salePrice,ps.promotionPrice, case when ps.availableQuantity < 0 then 0 else ps.availableQuantity end as availableQuantity, ps.idealQuantity, case when ( ps.idealQuantity - case when ps.availableQuantity < 0 then 0 else ps.availableQuantity end) < 0 then 0 else ( ps.idealQuantity - case when ps.availableQuantity < 0 then 0 else ps.availableQuantity end) end as Falta\nfrom ProductsSites ps\ninner join Products p on ps.productId = p.id\ninner join Sites s2 on ps.siteId  = s2.id\ninner join :table on :table.id = s2.id\nwhere  ps.isInactive = 0 and p.isInactive = 0\nand {{filtersite}}) as temp\nwhere Falta > 0\norder by falta desc"
+  },
+  {
+    "name": "Qtd Vendas",
+    "description": "Qtd Vendas",
+    "sql": "select count(*) as QtdVendas\nfrom Orders\ninner join Sites s2 on s2.id = Orders.siteId\ninner join :table on :table.id = Orders.siteId\nwhere (1=1)\n[[and {{data}}]]\n[[and {{filterSite}}]]"
+  },
+  {
+    "name": "Ticket Médio",
+    "description": "Ticket Médio",
+    "sql": "select AVG(Orders.totalValue) as TicketMedio\nfrom Orders\ninner join Sites s2 on s2.id = Orders.siteId\ninner join :table on :table.id = Orders.siteId\nwhere (1=1 )\n[[and {{data}}]]\n[[and {{filterSite}}]]"
+  },
+  {
+    "name": "Top produtos mais vendidos",
+    "description": "Top produtos mais vendidos",
+    "sql": "select @var := @var + 1 AS Posicao, sku,description,qty,totalcusto,totalValue,totallucro,markup, markdown\nfrom (\nselect p.sku, p.description, sum(oi.quantity) as qty, sum(oi.totalValue) as totalValue, sum(oi.totalCost) as totalcusto, sum(oi.totalValue) - sum(oi.totalCost) as totallucro, round( (sum(oi.totalValue) - sum(oi.totalCost))/(sum(oi.totalCost))*100,3) as MarkUp, round ((sum(oi.totalValue) - sum(oi.totalCost))/(sum(oi.totalValue))*100,3) as MarkDown\nfrom OrderItems oi\ninner join Orders on Orders.id = oi.orderId\ninner join Products p on p.id = oi.productId\ninner join Sites s2 on s2.id = Orders.siteId\ninner join :table on :table.id = Orders.siteId\nwhere (1=1)\n[[and {{data}}]]\n[[and {{filtersite}}]]\ngroup by p.sku, p.description\norder by 4 desc\n) TabTemp,(SELECT @var := 0) TabTemp2\nlimit 150"
+  },
+  {
+    "name": "Venda Total",
+    "description": "Venda Total",
+    "sql": "select sum(Orders.totalValue) as totalValue\nfrom Orders\ninner join :table on :table.id = Orders.siteId\nwhere (1=1)\n[[and {{data}}]]\n[[and {{filterSite}}]]"
+  },
+  {
+    "name": "Vendas na última semana",
+    "description": "Vendas na última semana",
+    "sql": "select concat(DATE_FORMAT(createdAt ,'%d/%m/%Y'),' - ', (CASE WEEKDAY(createdAt) when 0 then 'Segunda' when 1 then 'Terça' when 2 then 'Quarta' when 3 then 'Quinta' when 4 then 'Sexta' when 5 then 'Sábado' when 6 then 'Domingo' END)) AS Dia, sum(totalValue) as totalValue\nfrom Orders\ninner join :table on Orders.siteId = :table.id\nwhere (siteId in (select s2.id from Sites s2\ninner join :table on :table.id = s2.id))\nand (createdAt between DATE_ADD(CURRENT_DATE, INTERVAL -8 DAY) and CURRENT_DATE) and createdAt >= '2023-06-04'\nand ({{filtersite}})\ngroup by 1\norder by createdAt"
+  },
+  {
+    "name": "Vendas nos últimos meses",
+    "description": "Vendas nos últimos meses",
+    "sql": "select concat(mes,'/',ano) as MesAno, ROUND(totalValue,2) as ValorTotal, case when (concat(numMes,'/',ano) = concat(MONTH(NOW()),'/',YEAR(now()))) then ROUND(totalValue,2) / DAY(now()) else ROUND(totalValue,2) / DiasNoMes end as ValorMedioDiario\nfrom (\nselect (CASE month(createdAt) when 1 then 'Janeiro' when 2 then 'Fevereiro' when 3 then 'Março' when 4 then 'Abril' when 5 then 'Maio' when 6 then 'Junho' when 7 then 'Julho' when 8 then 'Agosto' when 9 then 'Setembro' when 10 then 'Outubro' when 11 then 'Novembro' when 12 then 'Dezembro' END) AS mes, year(Orders.createdAt) as ano, month(Orders.CreatedAt) as numMes, DAY(LAST_DAY(Orders.createdAt)) AS DiasNoMes, sum(totalValue) as totalValue\nfrom Orders\nwhere Orders.siteId in (select s2.id from Sites s2\ninner join :table on :table.id = s2.id\nwhere (1=1) [[ and {{filtersite}}]])\ngroup by numMes, Ano\norder by ano desc, numMes desc limit 6\n) as tabtemp\norder by nummes,ano"
+  },
+  {
+    "name": "Vendas por bandeira de cartão",
+    "description": "Vendas por bandeira de cartão",
+    "sql": "select case when op.detailBrand is null then 'Aplicativo' when op.detailBrand = '' then 'PIX' else op.detailBrand end as BandeiraCartao, sum(Orders.totalValue)\nfrom Orders\ninner join OrderPayments op on op.orderId = Orders.id\ninner join :table on :table.id = Orders.siteId\nwhere (1=1)\n[[and {{data}}]]\n[[and {{filterSite}}]]\ngroup by 1"
+  },
+  {
+    "name": "Vendas por grupos de produtos",
+    "description": "Vendas por grupos de produtos",
+    "sql": "select g.description, sum(oi.quantity) as qty, sum(oi.totalValue) as totalValue\nfrom OrderItems oi\ninner join Orders on Orders.id = oi.orderId\ninner join Products p on p.id = oi.productId\ninner join Groups g on g.id = p.groupId\ninner join Sites s2 on s2.id = Orders.siteId\ninner join :table on :table.id = Orders.siteId\n[[and {{data}}]]\n[[and {{filterSite}}]]\ngroup by g.description\norder by 3 desc"
+  },
+  {
+    "name": "Vendas por tipo de cartão",
+    "description": "Vendas por tipo de cartão",
+    "sql": "select case when op.detailDescription = '' then 'Não disponível' when op.detailDescription = 'CREDIT_CARD' then 'Cartão de Crédito a Vista' when op.detailDescription = 'DEBIT_CARD' then 'Cartão de Débito a Vista' else op.detailDescription end as TipoCartao, sum(Orders.totalValue)\nfrom Orders\ninner join OrderPayments op on op.orderId = Orders.id\ninner join Sites on Sites.id = Orders.siteId\ninner join :table on :table.id = Orders.siteId\nwhere (1=1)\n[[and {{data}}]]\n[[and {{filterSite}}]]\ngroup by 1"
+  },
+  {
+    "name": "Vendas totais por loja",
+    "description": "Vendas totais por loja",
+    "sql": "select s2.id, s2.fantasy, sum(totalValue) as totalValue, count(*) as QtdVendas, AVG(totalValue) as TicketMedio\nfrom Orders\ninner join Sites s2 on s2.id = siteId\ninner join :table on :table.id = Orders.siteId\nwhere (1=1)\n[[and {{data}}]]\ngroup by 1,2\norder by 3 desc"
+  }
+]
