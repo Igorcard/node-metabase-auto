@@ -1,9 +1,11 @@
-// Ponto de entrada do app
-require('dotenv').config();
-const MetabaseClient = require('./api/metabaseClient');
-const cliOptions = require('./cliOptions');
-const readline = require('readline');
-const { clear } = require('./utils/cmdHelper');
+
+import dotenv from 'dotenv';
+import readline from 'readline';
+import MetabaseClient from './api/metabaseClient.js';
+import * as cliOptions from './cliOptions.js';
+import { clear } from './utils/cmdHelper.js';
+
+dotenv.config();
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -27,7 +29,7 @@ function showMenu() {
     console.log('------------------------------------------');
 }
 
-async function mainMenu() {
+export async function mainMenu() {
     showMenu();
     rl.question('>> DIGITE O NÚMERO DA OPERAÇÃO DESEJADA: ', async (opcao) => {
         const metabase = new MetabaseClient({
@@ -38,22 +40,22 @@ async function mainMenu() {
 
         switch (opcao) {
             case '1':
-                await cliOptions.clonarCard(metabase, rl, mainMenu, clear);
+                await cliOptions.cloneCard(metabase, rl);
                 break;
             case '2':
-                await cliOptions.criarCard(metabase, rl, mainMenu, clear);
+                await cliOptions.buildCard(metabase, rl);
                 break;
             case '3':
-                await cliOptions.criarDashboard(metabase, rl, mainMenu, clear);
+                await cliOptions.buildDashboard(metabase, rl);
                 break;
             case '4':
-                await cliOptions.visualizarDashboard(metabase, rl, mainMenu, clear);
+                await cliOptions.viewDashboard(metabase, rl);
                 break;
             case '5':
-                await cliOptions.visualizarCard(metabase, rl, mainMenu, clear);
+                await cliOptions.viewCard(metabase, rl);
                 break;
             case '6':
-                await cliOptions.clonarDashboard(metabase, rl, mainMenu, clear);
+                await cliOptions.cloneDashboard(metabase, rl);
                 break;
             default:
                 console.log('\n------------------------------------------');

@@ -1,20 +1,22 @@
 // Funções CLI separadas por opção
-const questionService = require('./services/questionService');
-const dashboardService = require('./services/dashboardService');
+const cardService = require('./services/cards/cardService.js');
+const collectionService = require('./services/collection/collectionService.js');
+const { clear } = require('./utils/cmdHelper');
+const { mainMenu } = require('./index.js');
 
 module.exports = {
-    async clonarCard(metabase, rl, mainMenu, clear) {
+    async cloneCard(metabase, rl) {
         console.log('\n---------- CLONAR CARD ----------');
-        rl.question('>> ID DA PERGUNTA ORIGINAL: ', (questionId) => {
+        rl.question('>> ID DO CARD ORIGINAL: ', (cardId) => {
             rl.question('>> NOME DA TABELA ANTIGA: ', (oldTableName) => {
                 rl.question('>> NOME DA NOVA TABELA: ', async (newTableName) => {
                     try {
-                        const novaPergunta = await questionService.cloneQuestion(metabase, Number(questionId), oldTableName, newTableName);
+                        const newCard = await cardService.cloneCard(metabase, Number(cardId), oldTableName, newTableName);
                         console.log('\n------------------------------------------');
                         console.log('RESULTADO:');
                         console.log('------------------------------------------');
-                        console.log('PERGUNTA CLONADA COM SUCESSO:');
-                        console.log(JSON.stringify(novaPergunta, null, 2));
+                        console.log('CARD CLONADO COM SUCESSO:');
+                        console.log(JSON.stringify(newCard, null, 2));
                         console.log('------------------------------------------');
                     } catch (err) {
                         console.log('\n------------------------------------------');
@@ -27,9 +29,9 @@ module.exports = {
             });
         });
     },
-    async criarCard(metabase, rl, mainMenu, clear) {
+    async buildCard(metabase, rl) {
         console.log('\n---------- CRIAR CARD ----------');
-        rl.question('>> NOME DA PERGUNTA: ', (name) => {
+        rl.question('>> NOME DO CARD: ', (name) => {
             rl.question('>> DESCRIÇÃO: ', (description) => {
                 rl.question('>> QUERY SQL: ', (sql) => {
                     console.log('\nESCOLHA O BANCO DE DADOS:');
@@ -37,7 +39,7 @@ module.exports = {
                     console.log(' (10) Production - LojaExpress - Retailer');
                     rl.question('>> DIGITE O NÚMERO DO BANCO DE DADOS: ', (databaseId) => {
                         rl.question('>> DIGITE O ID DA COLLECTION: ', async (collectionId) => {
-                            const questionData = {
+                            const cardData = {
                                 name,
                                 description,
                                 dataset_query: {
@@ -56,13 +58,13 @@ module.exports = {
                                 console.log('\n------------------------------------------');
                                 console.log('RESULTADO:');
                                 console.log('------------------------------------------');
-                                const novaPergunta = await questionService.createQuestion(metabase, questionData);
-                                console.log('PERGUNTA CRIADA COM SUCESSO:');
-                                console.log(JSON.stringify(novaPergunta, null, 2));
+                                const newCard = await cardService.createCard(metabase, cardData);
+                                console.log('CARD CRIADO COM SUCESSO:');
+                                console.log(JSON.stringify(newCard, null, 2));
                                 console.log('------------------------------------------');
                             } catch (err) {
                                 console.log('\n------------------------------------------');
-                                console.error('ERRO AO CRIAR PERGUNTA:', err.response ? err.response.data : err);
+                                console.error('ERRO AO CRIAR CARD:', err.response ? err.response.data : err);
                                 console.log('------------------------------------------');
                             }
                             clear();
@@ -73,16 +75,16 @@ module.exports = {
             });
         });
     },
-    async criarDashboard(metabase, rl, mainMenu, clear) {
+    async buildDashboard(metabase, rl) {
         console.log('\n---------- CRIAR DASHBOARD ----------');
         rl.question('>> DIGITE O NOME DA NOVA COLLECTION: ', async (collectionName) => {
             try {
-                const collectionService = require('./services/collectionService');
-                const dashboardService = require('./services/dashboardService');
+                const collectionService = require('./services/collection/collectionService.js');
+                const dashboardService = require('./services/dashboard/dashboardService.js');
                 const fs = require('fs');
                 const path = require('path');
-                const novaCollection = await collectionService.createCollection(metabase, collectionName);
-                const collectionId = novaCollection.id;
+                const newCollection = await collectionService.createCollection(metabase, collectionName);
+                const collectionId = newCollection.id;
                 console.log(`\nCOLLECTION CRIADA COM SUCESSO: ${collectionName} (ID: ${collectionId})`);
                 rl.question('>> DIGITE O NOME DA TABELA PARA SUBSTITUIR: ', async (tableName) => {
                     const cardsPath = path.join(__dirname, 'cards.json');
@@ -98,10 +100,10 @@ module.exports = {
                     let createdCards = [];
                     for (const card of cards) {
                         // Substitui :table pelo nome informado
-                        const sqlFinal = card.sql.replace(/:table/g, tableName);
+                        const sql = card.sql.replace(/:table/g, tableName);
                         // Adiciona parâmetro 'data' se necessário
                         let templateTags = {};
-                        if (sqlFinal.includes('{{data}}')) {
+                        if (sql.includes('{{data}}')) {
                             templateTags['data'] = {
                                 id: 'data',
                                 name: 'data',
@@ -112,13 +114,13 @@ module.exports = {
                                 field_id: 2637
                             };
                         }
-                        const questionData = {
+                        const cardData = {
                             name: card.name,
                             description: card.description,
                             dataset_query: {
                                 type: 'native',
                                 native: {
-                                    query: sqlFinal,
+                                    query: sql,
                                     template_tags: templateTags
                                 },
                                 database: 9
@@ -130,10 +132,10 @@ module.exports = {
                         try {
                             console.log('\n------------------------------------------');
                             console.log(`CRIANDO CARD: ${card.name}`);
-                            const novaPergunta = await questionService.createQuestion(metabase, questionData);
-                            createdCards.push({id: novaPergunta.id});
-                            console.log('PERGUNTA CRIADA COM SUCESSO:');
-                            console.log(JSON.stringify(novaPergunta, null, 2));
+                            const newCard = await cardService.createCard(metabase, cardData);
+                            createdCards.push({id: newCard.id});
+                            console.log('CARD CRIADO COM SUCESSO:');
+                            console.log(JSON.stringify(newCard, null, 2));
                             console.log('------------------------------------------');
                         } catch (err) {
                             console.log('\n------------------------------------------');
@@ -146,17 +148,17 @@ module.exports = {
                         try {
                             // Buscar dashboard e dashcards atuais
                             const dashboardRes = await metabase.request('get', `/api/dashboard/${dashboardId}`);
-                            const dashcardsAtuais = dashboardRes.data.dashcards || [];
-                            console.log(`Dashboard ${dashboardId} possui ${dashcardsAtuais.length} dashcards.`);
+                            const currentDashcards = dashboardRes.data.dashcards || [];
+                            console.log(`Dashboard ${dashboardId} possui ${currentDashcards.length} dashcards.`);
                             // Monta os novos dashcards mantendo layout e propriedades
-                            const novosDashcards = dashcardsAtuais.map((dashcard, i) => {
+                            const newDashcards = currentDashcards.map((dashcard, i) => {
                                 // Copia todas propriedades do dashcard original
-                                const novoDashcard = { ...dashcard };
+                                const newDashcard = { ...dashcard };
                                 // Troca apenas o card_id para o novo card criado
-                                novoDashcard.card_id = createdCards[i] ? createdCards[i].id : dashcard.card_id;
-                                return novoDashcard;
+                                newDashcard.card_id = createdCards[i] ? createdCards[i].id : dashcard.card_id;
+                                return newDashcard;
                             });
-                            await dashboardService.setDashboardCards(metabase, dashboardId, novosDashcards);
+                            await dashboardService.setDashboardCards(metabase, dashboardId, newDashcards);
                             console.log('Todos os dashcards do dashboard foram atualizados para os novos cards!');
                         } catch (err) {
                             console.log('Erro ao atualizar cards do dashboard:', err.response ? err.response.data : err);
@@ -170,7 +172,7 @@ module.exports = {
             }
         });
     },
-    async visualizarDashboard(metabase, rl) {
+    async viewDashboard(metabase, rl) {
         console.log('\n---------- VISUALIZAR DASHCARDS ----------');
         rl.question('>> DIGITE O ID DO DASHBOARD PARA VISUALIZAR OS DASHCARDS: ', async (dashboardId) => {
             try {
@@ -194,7 +196,7 @@ module.exports = {
             mainMenu();
         });
     },
-    async visualizarCard(metabase, rl) {
+    async viewCard(metabase, rl) {
         console.log('\n---------- VISUALIZAR CARD ----------');
         rl.question('>> DIGITE O ID DO CARD PARA VISUALIZAR: ', async (cardId) => {
             try {
@@ -257,52 +259,51 @@ module.exports = {
             mainMenu();
         });
     },
-    async clonarDashboard(metabase, rl) {
+    async cloneDashboard(metabase, rl) {
         // CLONAR DASHBOARD
         console.log('\n---------- CLONAR DASHBOARD ----------');
-        const dashboardIdOriginal = 292;
-        rl.question('>> DIGITE O NOME DA NOVA COLLECTION: ', async (novaCollectionName) => {
-            try {
-                const collectionService = require('./services/collectionService');
+        const dashboardIdModel = 292;
+        rl.question('>> DIGITE O NOME DA NOVA COLLECTION: ', async (newCollectionName) => {
+            try {              
                 // Cria nova collection
-                const novaCollection = await collectionService.createCollection(metabase, novaCollectionName);
-                const novaCollectionId = novaCollection.id;
+                const newCollection = await collectionService.createCollection(metabase, newCollectionName);
+                const newCollectionId = newCollection.id;
                 // Usa o endpoint de cópia do Metabase
-                const copyRes = await metabase.request('post', `/api/dashboard/${dashboardIdOriginal}/copy`, {
+                const copyRes = await metabase.request('post', `/api/dashboard/${dashboardIdModel}/copy`, {
                     is_deep_copy: true
                 });
-                const novoDashboard = copyRes.data;
+                const newDashboard = copyRes.data;
                 // Atualiza a collection do novo dashboard
-                await metabase.request('put', `/api/dashboard/${novoDashboard.id}`, {
-                    collection_id: novaCollectionId,
-                    name: novaCollectionName + ' - Dashboard Geral'
+                await metabase.request('put', `/api/dashboard/${newDashboard.id}`, {
+                    collection_id: newCollectionId,
+                    name: newCollectionName + ' - Dashboard Geral'
                 });
                 // Busca os dashcards do novo dashboard para garantir que são os duplicados
-                const novoDashboardRes = await metabase.request('get', `/api/dashboard/${novoDashboard.id}`);
-                const dashcardsDuplicados = novoDashboardRes.data.dashcards || [];
+                const newDashboardRes = await metabase.request('get', `/api/dashboard/${newDashboard.id}`);
+                const duplicatedDashcards = newDashboardRes.data.dashcards || [];
                 // Solicita o nome da nova tabela
-                rl.question('>> DIGITE O NOME DA NOVA TABELA PARA SUBSTITUIR NO SQL DOS CARDS: ', async (novaTabela) => {
-                    for (const dashcard of dashcardsDuplicados) {
+                rl.question('>> DIGITE O NOME DA NOVA TABELA PARA SUBSTITUIR NO SQL DOS CARDS: ', async (newTable) => {
+                    for (const dashcard of duplicatedDashcards) {
                         if (dashcard.card_id) {
                             try {
                                 // Atualiza a collection do card
                                 await metabase.request('put', `/api/card/${dashcard.card_id}`, {
-                                    collection_id: novaCollectionId
+                                    collection_id: newCollectionId
                                 });
                                 // Busca o card duplicado
                                 const cardRes = await metabase.request('get', `/api/card/${dashcard.card_id}`);
-                                const cardDuplicado = cardRes.data;
-                                // Substitui SitesBerluc pela nova tabela no SQL
-                                let sqlAtual = cardDuplicado.dataset_query && cardDuplicado.dataset_query.native && cardDuplicado.dataset_query.native.query ? cardDuplicado.dataset_query.native.query : null;
-                                if (sqlAtual && sqlAtual.includes('SitesBerluc')) {
-                                    const novoSql = sqlAtual.replace(/SitesBerluc/g, novaTabela);
+                                const duplicatedCard = cardRes.data;
+                                // Substitui tabelas pela nova tabela no SQL
+                                let sql = duplicatedCard.dataset_query && duplicatedCard.dataset_query.native && duplicatedCard.dataset_query.native.query ? duplicatedCard.dataset_query.native.query : null;
+                                if (sql && sql.includes('SitesBerluc')) {
+                                    const newSql = sql.replace(/SitesBerluc/g, newTable);
                                     // Atualiza o SQL do card
                                     await metabase.request('put', `/api/card/${dashcard.card_id}`, {
                                         dataset_query: {
-                                            ...cardDuplicado.dataset_query,
+                                            ...duplicatedCard.dataset_query,
                                             native: {
-                                                ...cardDuplicado.dataset_query.native,
-                                                query: novoSql
+                                                ...duplicatedCard.dataset_query.native,
+                                                query: newSql
                                             }
                                         }
                                     });
@@ -312,33 +313,33 @@ module.exports = {
                             }
                         }
                     }
-                    // Duplicar o card de ID 3022, trocar SitesBerluc e adicionar à nova collection
+                    // Duplicar o card de ID 3022, trocar tabela e adicionar à nova collection
                     try {
                         const card3022Res = await metabase.request('get', '/api/card/3022');
                         const card3022 = card3022Res.data;
                         let sql3022 = card3022.dataset_query && card3022.dataset_query.native && card3022.dataset_query.native.query ? card3022.dataset_query.native.query : null;
-                        let novoSql3022 = sql3022 ? sql3022.replace(/SitesBerluc/g, novaTabela) : sql3022;
+                        let newSql3022 = sql3022 ? sql3022.replace(/SitesBerluc/g, novaTabela) : sql3022;
                         // Monta dados para criar novo card
-                        const novoCard3022 = {
+                        const newCard3022 = {
                             name: card3022.name + ' (Cópia)',
                             description: card3022.description,
                             dataset_query: {
                                 ...card3022.dataset_query,
                                 native: {
                                     ...card3022.dataset_query.native,
-                                    query: novoSql3022
+                                    query: newSql3022
                                 }
                             },
                             display: card3022.display,
                             visualization_settings: card3022.visualization_settings,
-                            collection_id: novaCollectionId
+                            collection_id: newCollectionId
                         };
-                        const card3022Duplicado = await metabase.request('post', '/api/card', novoCard3022);
-                        console.log(`Card 3022 duplicado com sucesso! Novo ID: ${card3022Duplicado.data.id}`);
+                        const duplicatedCard3022 = await metabase.request('post', '/api/card', newCard3022);
+                        console.log(`Card 3022 duplicado com sucesso! Novo ID: ${duplicatedCard3022.data.id}`);
                     } catch (err) {
                         console.log('Erro ao duplicar o card 3022:', err.response ? err.response.data : err);
                     }
-                    console.log(`Dashboard clonado com sucesso! Novo dashboard ID: ${novoDashboard.id}`);
+                    console.log(`Dashboard clonado com sucesso! Novo dashboard ID: ${newDashboard.id}`);
                     clear();
                     mainMenu();
                 });
