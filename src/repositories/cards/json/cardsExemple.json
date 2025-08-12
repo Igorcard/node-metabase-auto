@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Quantidade de Vendas",
+    "description": "Quantidade de Vendas",
+    "sql": "select count(*) as QtdVendas\nfrom Vendas\nwhere (1=1)\n[[and {{data}}]]"
+  },
+  {
+    "name": "Soma total de Vendas",
+    "description": "Soma total de Vendas",
+    "sql": "select sum(Vendas.valor) as TotalVendas\nfrom Vendas\nwhere (1=1)\n[[and {{data}}]]"
+  }
+]

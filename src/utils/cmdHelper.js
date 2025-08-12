@@ -1,5 +1,4 @@
-module.exports = {
-  clear() {
-    process.stdout.write(process.platform === 'win32' ? '\x1Bc' : '\x1B[2J\x1B[0f');
-  }
+
+export async function clear() {
+  process.stdout.write(process.platform === 'win32' ? '\x1Bc' : '\x1B[2J\x1B[0f')
 }
