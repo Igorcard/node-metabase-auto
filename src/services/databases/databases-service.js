@@ -1,11 +1,10 @@
 import * as databaseRepository from '../../repositories/databases/databases-repository.js'
 
-export async function getDatabases(metabase, rl) {
+export async function getDatabases(metabase) {
   console.log('\n---------- BANCOS DE DADOS ----------')
   try {
     const databases = await databaseRepository.getDatabases(metabase)
     const databasesData = databases.data || []
-    console.log(`\nHá ${databasesData.length} bancos de dados.`)
     databasesData.forEach((database) => {
       console.log('------------------------------------------')
       console.log(`ID: ${database.id}`)

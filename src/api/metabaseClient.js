@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-export class MetabaseClient {
+export class metabaseClient {
     constructor({ baseUrl, username, password }) {
         this.baseUrl = baseUrl
         this.username = username
