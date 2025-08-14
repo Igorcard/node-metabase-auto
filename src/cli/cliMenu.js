@@ -11,7 +11,7 @@ export async function showMenu() {
   
   while (option.choice !== 9) {
     console.clear()
-    line('        BEM-VINDO AO METABASE-API         ')
+    line('BEM-VINDO AO METABASE-API')
 
     option = await prompts({
       type: 'select',

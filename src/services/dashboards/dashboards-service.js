@@ -4,9 +4,10 @@ import * as dashboardRepository from '../../repositories/dashboards/dashboards-r
 import * as cliHelper from '../../cli/cliHelper.js'
 import fs from 'fs'
 import path from 'path'
+import { line } from '../../cli/cliHelper.js'
 
 export async function buildDashboard(metabase) {
-  console.log('\n---------- CRIAR DASHBOARD ----------')
+  line('CRIAR DASHBOARD')
   const collectionName = await cliHelper.input('>> DIGITE O NOME DA NOVA COLLECTION: ')
   try {
     const newCollection = await collectionRepository.createCollection(metabase, collectionName)
@@ -20,7 +21,7 @@ export async function buildDashboard(metabase) {
     try {
       cards = JSON.parse(fs.readFileSync(cardsPath, 'utf8'))
     } catch (err) {
-      console.log('Erro ao ler cards.json:', err.message)
+      line('Erro ao ler cards.json:', err.message)
       return
     }
 
@@ -57,8 +58,7 @@ export async function buildDashboard(metabase) {
         collection_id: Number(collectionId)
       }
       try {
-        console.log('\n------------------------------------------')
-        console.log(`CRIANDO CARD: ${card.name}`)
+        line(`CRIANDO CARD: ${card.name}`)
 
         const newCard = await cardRepository.createCard(metabase, cardData)
 
@@ -67,9 +67,7 @@ export async function buildDashboard(metabase) {
         console.log(JSON.stringify(newCard, null, 2))
         console.log('------------------------------------------')
       } catch (err) {
-        console.log('\n------------------------------------------')
-        console.error(`ERRO AO CRIAR CARD ${card.name}:`, err.response ? err.response.data : err)
-        console.log('------------------------------------------')
+        line(`ERRO AO CRIAR CARD ${card.name}:`, err.response ? err.response.data : err)
         return
       }
     }
@@ -90,16 +88,16 @@ export async function buildDashboard(metabase) {
       await dashboardRepository.setDashboardCards(metabase, dashboardId, newDashcards)
       console.log('Todos os dashcards do dashboard foram atualizados para os novos cards!')
     } catch (err) {
-      console.log('Erro ao atualizar cards do dashboard:', err.response ? err.response.data : err)
+      line('Erro ao atualizar cards do dashboard:', err.response ? err.response.data : err)
       return
     }
   } catch (err) {
-    console.log('Erro ao criar collection:', err.response ? err.response.data : err)
+    line('Erro ao criar collection:', err.response ? err.response.data : err)
   }
 }
 
 export async function getDashboard(metabase) {
-  console.log('\n---------- VISUALIZAR DASHCARDS ----------')
+  line('VISUALIZAR DASHCARDS')
   const dashboardId = await cliHelper.input('>> DIGITE O ID DO DASHBOARD PARA VISUALIZAR OS DASHCARDS: ')
   try {
     const dashboardRes = await dashboardRepository.getDashboard(metabase, dashboardId)
@@ -116,12 +114,12 @@ export async function getDashboard(metabase) {
     })
     console.log('------------------------------------------')
   } catch (err) {
-    console.log('Erro ao buscar dashcards:', err.response ? err.response.data : err)
+    line('Erro ao buscar dashcards:', err.response ? err.response.data : err)
   }
 }
 
 export async function cloneMainDashboard(metabase) {
-  console.log('\n---------- CLONAR DASHBOARD GERAL ----------')
+  line('CLONAR DASHBOARD GERAL')
   const dashboardIdModel = 292
   const newCollectionName = await await cliHelper.input('>> DIGITE O NOME DA NOVA COLLECTION: ')
   try {              
@@ -163,7 +161,7 @@ export async function cloneMainDashboard(metabase) {
             })
           }
         } catch (err) {
-          console.log(`Erro ao atualizar card ${dashcard.card_id}:`, err.response ? err.response.data : err)
+          line(`Erro ao atualizar card ${dashcard.card_id}:`, err.response ? err.response.data : err)
           return
         }
       }
@@ -191,17 +189,17 @@ export async function cloneMainDashboard(metabase) {
       const duplicatedCard = await cardRepository.createCard(metabase, newCard)
       console.log(`Card 3022 duplicado com sucesso! Novo ID: ${duplicatedCard.id}`)
     } catch (err) {
-      console.log('Erro ao duplicar o card 3022:', err.response ? err.response.data : err)
+      line('Erro ao duplicar o card 3022:', err.response ? err.response.data : err)
       return
     }
     console.log(`Dashboard clonado com sucesso! Novo dashboard ID: ${newDashboard.id}`)
   } catch (err) {
-    console.log('Erro ao clonar dashboard:', err.response ? err.response.data : err)
+    line('Erro ao clonar dashboard:', err.response ? err.response.data : err)
   }
 }
 
 export async function cloneManagerDashboard(metabase, model){
-  console.log('\n---------- CLONAR DASHBOARD PARA CONDOMÍNIO ----------')
+  line('CLONAR DASHBOARD PARA CONDOMÍNIO')
   
   const mainCollectionName = await await cliHelper.input('>> DIGITE O NOME DA MAIN COLLECTION: ')
 
@@ -215,7 +213,7 @@ export async function cloneManagerDashboard(metabase, model){
   })
 
   if (!mainCollectionId) {
-    console.log('NÃO FOI ENCONTRADA A MAIN COLLECTION:', mainCollectionName)
+    line('NÃO FOI ENCONTRADA A MAIN COLLECTION:', mainCollectionName)
     return
   }
 
@@ -240,7 +238,7 @@ export async function cloneManagerDashboard(metabase, model){
 
     console.log(`Dashboard clonado com sucesso! Novo dashboard ID: ${newDashboard.id}`)
   } catch (err) {
-    console.log('Erro ao clonar dashboard:', err.response ? err.response.data : err)
+    line('Erro ao clonar dashboard:', err.response ? err.response.data : err)
   }
 }
 
@@ -272,7 +270,7 @@ export async function managerDashboard(metabase, duplicatedDashcards, newCollect
           })
         }
       } catch (err) {
-        console.log(`Erro ao atualizar card ${dashcard.card_id}:`, err.response ? err.response.data : err)
+        line(`Erro ao atualizar card ${dashcard.card_id}:`, err.response ? err.response.data : err)
         return
       }
     }
@@ -308,7 +306,7 @@ export async function cashbackDashboard(metabase, duplicatedDashcards, newCollec
           })
         }
       } catch (err) {
-        console.log(`Erro ao atualizar card ${dashcard.card_id}:`, err.response ? err.response.data : err)
+        line(`Erro ao atualizar card ${dashcard.card_id}:`, err.response ? err.response.data : err)
         return
       }
     }

@@ -31,9 +31,7 @@ export async function buildCard(metabase) {
 	}
 
 	try {
-		console.log('\n------------------------------------------')
-		console.log('RESULTADO:')
-		console.log('------------------------------------------')
+		line('RESULTADO:')
 
 		const newCard = await cardRepository.createCard(metabase, cardData)
 		
@@ -41,14 +39,12 @@ export async function buildCard(metabase) {
 		console.log(JSON.stringify(newCard, null, 2))
 		console.log('------------------------------------------')
 	} catch (err) {
-		console.log('\n------------------------------------------')
-		console.error('ERRO AO CRIAR CARD:', err.response ? err.response.data : err)
-		console.log('------------------------------------------')
+		line('ERRO AO CRIAR CARD:', err.response ? err.response.data : err)
 	}
 }
 
 export async function getCard(metabase) {
-	console.log('\n---------- VISUALIZAR CARD ----------')
+	line('VISUALIZAR CARD')
 	const cardId = await cliHelper.input('>> DIGITE O ID DO CARD PARA VISUALIZAR: ')
 	try {
 		const card = await cardRepository.getCard(metabase, cardId)
@@ -83,20 +79,20 @@ export async function getCard(metabase) {
 						fieldId = param.target[0].dimension[1]
 					}
 				}
-				console.log(`- Tipo: ${param.type}`)
+				console.log(`Tipo: ${param.type}`)
 
 				if (fieldId) {
-					console.log(`  Campo configurado (field_id): ${fieldId}`)
+					console.log(`Campo configurado (field_id): ${fieldId}`)
 				}
 				if (paramKey) {
 					try {
 						const paramRes = cardRepository.getCardParams(metabase, cardId, paramKey)
-						console.log(`  Valores (${paramKey}):`, paramRes.data)
+						console.log(`Valores (${paramKey}):`, paramRes.data)
 					} catch (err) {
-						console.log(`  Valores (${paramKey}): Erro ao buscar valores (${err.response ? err.response.data : err})`)
+						console.log(`Valores (${paramKey}): Erro ao buscar valores (${err.response ? err.response.data : err})`)
 					}
 				} else {
-					console.log(`  Parâmetro sem chave identificável:`, param)
+					console.log(`Parâmetro sem chave identificável:`, param)
 				}
 			}
 		} else {
@@ -104,6 +100,6 @@ export async function getCard(metabase) {
 		}
 		console.log('------------------------------------------')
 	} catch (err) {
-		console.log('Erro ao buscar card:', err.response ? err.response.data : err)
+		line('Erro ao buscar card:', err.response ? err.response.data : err)
 	}
 }
